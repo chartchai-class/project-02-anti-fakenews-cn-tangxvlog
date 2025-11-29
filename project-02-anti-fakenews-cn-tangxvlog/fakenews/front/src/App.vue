@@ -42,7 +42,7 @@ const onRetry = () => { loadFromBackend() }
 </script>
 
 <style>
-/* styles are imported via main.ts (App.css, index.css) */
+/* 样式由 main.ts 引入（App.css、index.css） */
 .top-progress { position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: transparent; z-index: 9999 }
 .top-progress .bar { height: 100%; background: linear-gradient(90deg, #4f46e5, #06b6d4); transition: width .2s ease }
 </style>

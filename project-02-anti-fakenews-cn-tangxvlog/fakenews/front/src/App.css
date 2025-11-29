@@ -1,4 +1,4 @@
-/* Basic layout styling to mimic a clean news site vibe */
+/* 基础布局样式，营造简洁的新闻站点氛围 */
 
 :root {
   --bg: #f7f7f9;
@@ -42,7 +42,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 /* 限制摘要显示行数，避免卡片过高 */
 .summary {
   display: -webkit-box;
-  -webkit-line-clamp: 6; /* 显示最多6行 */
+  -webkit-line-clamp: 6; /* 最多显示 6 行 */
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-height: calc(1.5em * 6);
@@ -54,7 +54,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
 .detail .title { font-size: 22px; }
 .detail .cover { width: 100%; max-height: 420px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
-/* 首页卡片封面图：等比裁剪，避免撑出横向滚动 */
+/* 首页卡片封面图：等比裁剪，避免横向滚动 */
 .card-cover { width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); margin: 8px 0; display:block; }
 .results { display:flex; align-items:center; gap: 8px; }
 .chip { display:inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid var(--border); }
@@ -75,7 +75,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .form-row { display:grid; gap:6px; }
 .form-row input, .form-row textarea, .form-row select { padding:8px; border:1px solid var(--border); border-radius:4px; }
 
-/* 响应式：在较宽屏幕上使用多列布局，充分利用右侧空间 */
+/* 响应式：宽屏下使用多列布局，充分利用空间 */
 @media (min-width: 900px) {
   .news-list { grid-template-columns: repeat(2, 1fr); }
 }

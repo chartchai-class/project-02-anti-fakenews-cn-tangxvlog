@@ -6,7 +6,7 @@ export interface News {
   summary: string;
   content: string;
   reporter: string;
-  createdAt: string; // ISO string
+  createdAt: string; // ISO 字符串
   imageUrl?: string;
   source?: string; // 来源（RSS 站点名）
   link?: string; // 原文链接
@@ -28,7 +28,7 @@ export interface Vote {
   comment?: string;
   imageUrl?: string;
   voter?: string;
-  createdAt: string; // ISO
+  createdAt: string; // ISO 字符串
 }
 
 export interface VoteCounts {

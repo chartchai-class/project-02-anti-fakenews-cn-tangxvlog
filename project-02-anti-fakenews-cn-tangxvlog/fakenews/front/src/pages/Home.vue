@@ -92,7 +92,7 @@ const filtered = computed(() => {
   const byDateDesc = (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   const base = isSearching.value ? searched.value : state.news
   if (filter.value === 'all') {
-    // 仅按时间倒序，允许 Fake 与 Not Fake 自然夹杂
+    // 仅时间倒序，状态自然混排
     return base.slice().sort(byDateDesc)
   }
   return base
@@ -171,12 +171,12 @@ const onInput = async (e: Event) => {
   startProgress()
   try {
     const res = await useStore().searchNews(v)
-    // 后端无匹配时，前端对现有列表做本地回退匹配（支持局部字母）
-    if (res.length === 0) {
-      const kw = v.trim().toLowerCase()
-      searched.value = useStore().state.news.filter((n: any) => {
-        const t = String(n.title || '').toLowerCase()
-        const te = String(n.translations?.en?.title || '').toLowerCase()
+      // 后端无匹配则本地回退（支持部分字母匹配）
+      if (res.length === 0) {
+        const kw = v.trim().toLowerCase()
+        searched.value = useStore().state.news.filter((n: any) => {
+          const t = String(n.title || '').toLowerCase()
+          const te = String(n.translations?.en?.title || '').toLowerCase()
         return t.includes(kw) || te.includes(kw)
       })
     } else {

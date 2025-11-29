@@ -3,7 +3,7 @@ import type { News, Vote, VoteCounts, NewsStatus, VoteChoice } from './types'
 
 export const StoreSymbol = Symbol('store')
 
-// util: simple date formatter used by pages
+// 工具：页面使用的简易日期格式化器
 export const formatDate = (iso: string) => {
   try {
     const d = new Date(iso)
@@ -43,7 +43,7 @@ function createSeedNews(): InternalNews[] {
   const sources = ['Global Times', 'Daily Watch', 'Metro News', 'TechWire', 'HealthLine', 'City Herald', 'Eco Monitor', 'Finance Post']
   for (let i = 0; i < total; i += 1) {
     const id = i + 1
-    const createdAt = new Date(now - i * 3600_000).toISOString() // staggered by hour
+    const createdAt = new Date(now - i * 3600_000).toISOString() // 按小时递减模拟时间
     const sbj = subjects[i % subjects.length]
     const act = actions[(i * 3) % actions.length]
     const enTitle = `${sbj} ${act}`
@@ -103,7 +103,7 @@ export function createStore() {
     } catch { return 'anon' }
   }
 
-  // Auth state
+  // 认证状态
   type Role = 'USER' | 'ADMIN'
   const initAuth = () => {
     try { const raw = localStorage.getItem('auth_user'); return raw ? JSON.parse(raw) as { email: string; role: Role } : null } catch { return null }
@@ -140,7 +140,7 @@ export function createStore() {
   const canImport = () => authUser.value?.role === 'ADMIN'
   const canVoteComment = () => !!authUser.value
 
-  // Global progress bar state
+  // 全局顶部进度条状态
   const progressActive = ref(false)
   const progressValue = ref(0)
   let progressTimer: number | undefined
@@ -149,7 +149,7 @@ export function createStore() {
     progressActive.value = true
     progressValue.value = 0
     progressTimer = window.setInterval(() => {
-      // Ease towards 95%
+      // 以缓速靠近 95%
       const inc = 5 + Math.random() * 10
       progressValue.value = Math.min(95, progressValue.value + inc)
     }, 150)
@@ -162,7 +162,7 @@ export function createStore() {
 
   const persistLikes = () => {
     try { localStorage.setItem('likes_by_news', JSON.stringify(likesByNews.value)) }
-    catch (e) { void e /* ignore storage write errors */ }
+    catch (e) { void e /* 忽略存储写入错误 */ }
   }
 
   const loadFromBackend = async () => {
@@ -334,7 +334,7 @@ export function createStore() {
       if (!cur) { void fetchComments(newsId, page, pageSize) }
       return cur || []
     }
-    // 本地回退：先筛选后再做分页，避免一次性返回大量数据
+    // 本地回退：先筛选再分页，避免一次性返回大量数据
     const all = votes.value.filter((v) => v.newsId === newsId && (v.comment || v.imageUrl))
     const start = (Math.max(1, page) - 1) * Math.max(1, pageSize)
     return all.slice(start, start + pageSize)
@@ -344,7 +344,7 @@ export function createStore() {
     const keep = news.value.filter((n) => !n.__imported)
     const removedIds = new Set(news.value.filter((n) => n.__imported).map((n) => n.id))
     news.value = keep
-    // drop votes associated with removed imported news
+    // 删除与已移除导入新闻关联的投票
     votes.value = votes.value.filter((v) => !removedIds.has(v.newsId))
   }
 
@@ -363,7 +363,7 @@ export function createStore() {
     }
   }
 
-  // Prime half seeds to Fake, half to Not Fake to make statuses visible
+  // 将一半示例标记为假、一半为非假，以便状态明显
   const primeSeedStatuses = () => {
     const half = Math.floor(news.value.length / 2)
     for (let i = 0; i < news.value.length; i += 1) {
@@ -405,7 +405,7 @@ export function createStore() {
     } finally { finishProgress() }
   }
 
-  // Auto randomize likes, votes and comments for all news
+  // 为所有新闻自动随机生成点赞、投票与评论
   const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
   const randomizeEngagement = (opts?: { likeMin?: number; likeMax?: number; voteMin?: number; voteMax?: number; commentRate?: number; imageRate?: number }) => {
     const likeMin = opts?.likeMin ?? 5
@@ -435,7 +435,7 @@ export function createStore() {
     persistLikes()
   }
 
-  // Expose a simple state object
+  // 暴露简化的状态对象
   const state = {
     get news() { return news.value as News[] },
     get votes() { return votes.value },
@@ -446,13 +446,13 @@ export function createStore() {
     get networkError() { return networkError.value },
   }
 
-  // Optional: auto import RSS is disabled by default; can be re-enabled via env
+  // 可选：自动导入 RSS 默认关闭，可通过环境变量开启
   const autoImport = String(import.meta.env?.VITE_AUTO_IMPORT_RSS ?? '').toLowerCase() === 'true'
-  // Initialize demo votes to make half of seeds show different statuses
+  // 初始化示例投票，使一半种子新闻呈现不同状态
   primeSeedStatuses()
-  // Optional randomization to vary counts
+  // 可选随机化以增加多样计数
   boostSeedVotes(18, 24)
-  // Pre-populate engagement so news already has likes/votes/comments from different users
+  // 预填充互动数据，使新闻已有来自不同用户的点赞/投票/评论
   randomizeEngagement({ likeMin: 12, likeMax: 48, voteMin: 10, voteMax: 26, commentRate: 0.5, imageRate: 0.18 })
   if (autoImport) { void 0 }
   void loadFromBackend()
@@ -474,7 +474,7 @@ export function createStore() {
   const processCountsQueue = () => {
     while (countsInFlight < MAX_COUNTS_CONCURRENT && countsQueue.length > 0) {
       const id = countsQueue.shift()!
-      // skip if already fetched
+      // 如已获取则跳过
       if (countsByNews.value[id]) continue
       countsInFlight += 1
       void fetchCounts(id)
@@ -533,7 +533,7 @@ export function createStore() {
           return items as News[]
         }
       }
-      // 后端无匹配时，本地回退匹配（支持英文翻译标题）
+      // 后端无匹配则本地回退（支持英文翻译标题）
       const byDateDesc = (a: News, b: News) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       const kw = k.toLowerCase()
       return news.value

@@ -57,7 +57,7 @@ public class NewsService {
         n.setReporter(req.getReporter().trim());
         n.setImageUrl(req.getImageUrl() != null ? req.getImageUrl().trim() : null);
         n.setCreatedAt(Instant.now());
-        // 初始点赞：15-20 随机
+        // 初始点赞设为 [15, 20] 随机值
         n.setLikes((int) (15 + Math.random() * 6));
         News saved = newsRepository.save(n);
         return NewsDTO.from(saved);
@@ -69,7 +69,7 @@ public class NewsService {
         if (!exists) {
             n.setLikes(n.getLikes() + 1);
             newsRepository.save(n);
-            // 记录唯一点赞
+            // 记录客户端唯一点赞
             var rec = new fakenews.backend.model.LikeRecord();
             rec.setNews(n);
             rec.setClientId(clientId);
