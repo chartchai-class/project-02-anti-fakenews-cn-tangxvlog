@@ -12,11 +12,12 @@
   </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 const emit = defineEmits<{ (e: 'retry'): void }>()
 defineProps<{ message?: string }>()
-const started = $ref(false)
+const started = ref(false)
 const onRetry = () => emit('retry')
-const onStart = async () => { started = true; try { await fetch('/__dev/restart-backend', { method: 'POST' }) } catch {} }
+const onStart = async () => { started.value = true; try { await fetch('/__dev/restart-backend', { method: 'POST' }) } catch {} }
 </script>
 
 <style scoped>
