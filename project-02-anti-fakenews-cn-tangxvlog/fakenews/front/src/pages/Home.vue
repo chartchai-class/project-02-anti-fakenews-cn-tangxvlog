@@ -90,9 +90,19 @@ const searched = ref<any[]>([])
 const isSearching = computed(() => q.value.trim().length > 0)
 const filtered = computed(() => {
   const byDateDesc = (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  const base = isSearching.value ? searched.value : state.news
+  let base = isSearching.value ? searched.value : state.news
+  if (isSearching.value && base.length === 0) {
+    const kw = q.value.trim().toLowerCase()
+    base = state.news.filter((n: any) => {
+      const t = String(n.title || '').toLowerCase()
+      const te = String(n.translations?.en?.title || '').toLowerCase()
+      const s = String(n.summary || '').toLowerCase()
+      const c = String(n.content || '').toLowerCase()
+      const r = String(n.reporter || '').toLowerCase()
+      return t.includes(kw) || te.includes(kw) || s.includes(kw) || c.includes(kw) || r.includes(kw)
+    })
+  }
   if (filter.value === 'all') {
-    // 仅按时间倒序，允许 Fake 与 Not Fake 自然夹杂
     return base.slice().sort(byDateDesc)
   }
   return base
@@ -140,10 +150,18 @@ const onPageSizeChange = (e: Event) => {
 const prev = () => { if (page.value > 1) page.value -= 1 }
 const next = () => { if (page.value < totalPages.value) page.value += 1 }
 
-const onClearImported = () => {
+const onClearImported = async () => {
   if (confirm(t('confirmClearImported') as any)) {
     startProgress()
-    try { clearImported() } finally { finishProgress() }
+    try {
+      clearImported()
+      if (isSearching.value) {
+        const res = await useStore().searchNews(q.value)
+        searched.value = res
+      } else {
+        searched.value = []
+      }
+    } finally { finishProgress() }
   }
 }
 const onBoostVotes = () => {
@@ -171,17 +189,7 @@ const onInput = async (e: Event) => {
   startProgress()
   try {
     const res = await useStore().searchNews(v)
-    // 后端无匹配时，前端对现有列表做本地回退匹配（支持局部字母）
-    if (res.length === 0) {
-      const kw = v.trim().toLowerCase()
-      searched.value = useStore().state.news.filter((n: any) => {
-        const t = String(n.title || '').toLowerCase()
-        const te = String(n.translations?.en?.title || '').toLowerCase()
-        return t.includes(kw) || te.includes(kw)
-      })
-    } else {
-      searched.value = res
-    }
+    searched.value = res
   } finally { finishProgress() }
 }
 
