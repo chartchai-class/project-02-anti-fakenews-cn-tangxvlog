@@ -6,7 +6,7 @@
       <button :class="{ active: filter==='fake' }" @click="setFilter('fake')">{{ t('fake') }}</button>
       <button :class="{ active: filter==='not_fake' }" @click="setFilter('not_fake')">{{ t('not_fake') }}</button>
     </div>
-    <div style="display:flex; align-items:center; gap:8px">
+    <div style="display:flex; align-items:center; gap:12px">
       <input :value="q" @input="onInput" type="text" placeholder="输入标题关键词搜索" style="padding:6px 8px; border:1px solid var(--border); border-radius:6px; min-width:240px" />
       <span>{{ t('perPage') }}</span>
       <select :value="pageSize" @change="onPageSizeChange">
@@ -17,8 +17,12 @@
       <RouterLink v-if="canReport()" class="btn" to="/report">{{ t('reportButton') }}</RouterLink>
       <button class="btn" @click="onClearImported">{{ t('clearImported') }}</button>
       <button class="btn" @click="onBoostVotes">{{ t('boostVotes') }}</button>
-      <RouterLink v-if="!authUser" class="btn" to="/login">Login</RouterLink>
-      <button v-else class="btn" @click="onLogout">Logout</button>
+      <div v-if="authUser" style="display:flex; align-items:center; gap:8px; margin-left:auto">
+        <img :src="avatar(authUser?.avatarUrl, authUser?.username || authUser?.email)" alt="avatar" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid var(--border)" />
+        <span>{{ authUser?.username || authUser?.email }}</span>
+        <button class="btn" @click="onLogout">Logout</button>
+      </div>
+      <RouterLink v-else class="btn" to="/login" style="margin-left:auto">Login</RouterLink>
     </div>
   </div>
 
@@ -90,9 +94,19 @@ const searched = ref<any[]>([])
 const isSearching = computed(() => q.value.trim().length > 0)
 const filtered = computed(() => {
   const byDateDesc = (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  const base = isSearching.value ? searched.value : state.news
+  let base = isSearching.value ? searched.value : state.news
+  if (isSearching.value && base.length === 0) {
+    const kw = q.value.trim().toLowerCase()
+    base = state.news.filter((n: any) => {
+      const t = String(n.title || '').toLowerCase()
+      const te = String(n.translations?.en?.title || '').toLowerCase()
+      const s = String(n.summary || '').toLowerCase()
+      const c = String(n.content || '').toLowerCase()
+      const r = String(n.reporter || '').toLowerCase()
+      return t.includes(kw) || te.includes(kw) || s.includes(kw) || c.includes(kw) || r.includes(kw)
+    })
+  }
   if (filter.value === 'all') {
-    // 仅时间倒序，状态自然混排
     return base.slice().sort(byDateDesc)
   }
   return base
@@ -140,10 +154,18 @@ const onPageSizeChange = (e: Event) => {
 const prev = () => { if (page.value > 1) page.value -= 1 }
 const next = () => { if (page.value < totalPages.value) page.value += 1 }
 
-const onClearImported = () => {
+const onClearImported = async () => {
   if (confirm(t('confirmClearImported') as any)) {
     startProgress()
-    try { clearImported() } finally { finishProgress() }
+    try {
+      clearImported()
+      if (isSearching.value) {
+        const res = await useStore().searchNews(q.value)
+        searched.value = res
+      } else {
+        searched.value = []
+      }
+    } finally { finishProgress() }
   }
 }
 const onBoostVotes = () => {
@@ -171,6 +193,7 @@ const onInput = async (e: Event) => {
   startProgress()
   try {
     const res = await useStore().searchNews(v)
+    searched.value = res
       // 后端无匹配则本地回退（支持部分字母匹配）
       if (res.length === 0) {
         const kw = v.trim().toLowerCase()
@@ -188,6 +211,13 @@ const onInput = async (e: Event) => {
 const PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="%23eef2f7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23666" font-size="24" font-family="Arial">No Image</text></svg>'
 const cover = (n: any) => n.imageUrl || PLACEHOLDER
 const onImgError = (e: Event) => { (e.target as HTMLImageElement).src = PLACEHOLDER }
+
+const avatar = (url?: string, name?: string) => {
+  if (url) return url
+  const initial = (name && name.length > 0) ? name[0].toUpperCase() : 'U'
+  const svg = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="#cbd5e1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#111827" font-size="32" font-family="Arial, sans-serif">${initial}</text></svg>`)
+  return `data:image/svg+xml;utf8,${svg}`
+}
 </script>
 
 <style scoped>

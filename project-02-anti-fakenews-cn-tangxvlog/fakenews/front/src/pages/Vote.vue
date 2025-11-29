@@ -19,10 +19,14 @@
         <label>{{ t('yourComment') }}</label>
         <textarea v-model="comment" rows="4" :autofocus="mode==='comment'"></textarea>
       </div>
-      <div class="form-row">
-        <label>{{ t('imageUrl') }}</label>
-        <input v-model="imageUrl" placeholder="https://..." />
-      </div>
+  <div class="form-row">
+    <label>{{ t('imageUrl') }}</label>
+    <input v-model="imageUrl" placeholder="https://..." />
+    <div style="display:flex; gap:8px; align-items:center; margin-top:6px">
+      <input type="file" @change="onFileChange" />
+      <button class="btn" type="button" @click="uploadImage" :disabled="!file">上传图片</button>
+    </div>
+  </div>
       <div class="form-row">
         <label>{{ t('yourName') }}</label>
         <input v-model="voter" />
@@ -56,6 +60,30 @@ const comment = ref('')
 const imageUrl = ref('')
 const voter = ref('')
 const mode = computed(() => String(route.query.mode || ''))
+const file = ref<File | null>(null)
+
+const onFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  file.value = (input.files && input.files[0]) ? input.files[0] : null
+}
+
+const uploadImage = async () => {
+  if (!file.value) return
+  const fd = new FormData()
+  fd.append('file', file.value)
+  try {
+    const res = await fetch('/api/storage/uploadFile', { method: 'POST', body: fd })
+    if (res.ok) {
+      const url = await res.text()
+      imageUrl.value = url.trim()
+      alert('图片已上传')
+    } else {
+      alert('上传失败')
+    }
+  } catch {
+    alert('网络错误，上传失败')
+  }
+}
 
 const submit = () => {
   if (!n.value) return

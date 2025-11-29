@@ -55,4 +55,21 @@ public class SupabaseStorageService {
         Files.deleteIfExists(tempFile);
         return url;
     }
+
+    public String uploadString(String suggestedName, String content, String contentType) throws IOException {
+        String baseName = (suggestedName == null || suggestedName.isBlank()) ? "upload.txt" : suggestedName.replaceAll("[^A-Za-z0-9._-]", "_");
+        String saltFileName = LocalDateTime.now().format(formatter) + "-" + baseName;
+
+        if (contentType == null || contentType.isBlank()) contentType = "text/plain";
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(saltFileName)
+                .contentType(contentType)
+                .build();
+
+        byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
+
+        return String.format("%s/%s/%s", outputUrl, bucketName, saltFileName);
+    }
 }

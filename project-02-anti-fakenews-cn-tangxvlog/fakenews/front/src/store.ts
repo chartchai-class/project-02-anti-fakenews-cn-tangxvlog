@@ -106,9 +106,12 @@ export function createStore() {
   // 认证状态
   type Role = 'USER' | 'ADMIN'
   const initAuth = () => {
-    try { const raw = localStorage.getItem('auth_user'); return raw ? JSON.parse(raw) as { email: string; role: Role } : null } catch { return null }
+    try {
+      const raw = localStorage.getItem('auth_user')
+      return raw ? JSON.parse(raw) as { email: string; role: Role; username?: string; avatarUrl?: string } : null
+    } catch { return null }
   }
-  const authUser = ref<{ email: string; role: Role } | null>(initAuth())
+  const authUser = ref<{ email: string; role: Role; username?: string; avatarUrl?: string } | null>(initAuth())
   const persistAuth = () => { try { localStorage.setItem('auth_user', JSON.stringify(authUser.value)) } catch { void 0 }
   }
   const login = async (email: string, password: string) => {
@@ -117,19 +120,19 @@ export function createStore() {
       const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
       if (res.ok) {
         const d = await res.json()
-        authUser.value = { email: String(d.email), role: String(d.role) as Role }
+        authUser.value = { email: String(d.email), role: String(d.role) as Role, username: d.username ? String(d.username) : undefined, avatarUrl: d.avatarUrl ? String(d.avatarUrl) : undefined }
         persistAuth(); return
       }
       throw new Error('login failed')
     } finally { finishProgress() }
   }
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, username?: string, avatarUrl?: string) => {
     startProgress()
     try {
-      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, username, avatarUrl }) })
       if (res.ok) {
         const d = await res.json()
-        authUser.value = { email: String(d.email), role: String(d.role) as Role }
+        authUser.value = { email: String(d.email), role: String(d.role) as Role, username: d.username ? String(d.username) : undefined, avatarUrl: d.avatarUrl ? String(d.avatarUrl) : undefined }
         persistAuth(); return
       }
       throw new Error('register failed')
@@ -514,11 +517,22 @@ export function createStore() {
     if (k.length === 0) {
       return news.value.slice() as News[]
     }
+    const byDateDesc = (a: News, b: News) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    const kw = k.toLowerCase()
+    const localMatches = (state.news as News[]).filter((n) => {
+      const t = String(n.title || '').toLowerCase()
+      const te = String(n.translations?.en?.title || '').toLowerCase()
+      const s = String(n.summary || '').toLowerCase()
+      const c = String(n.content || '').toLowerCase()
+      const r = String(n.reporter || '').toLowerCase()
+      return t.includes(kw) || te.includes(kw) || s.includes(kw) || c.includes(kw) || r.includes(kw)
+    }) as News[]
     if (backendReady.value) {
       const res = await fetch(`/api/news?q=${encodeURIComponent(k)}`)
+      let items: News[] = []
       if (res.ok) {
         const arr = await res.json()
-        const items: InternalNews[] = arr.map((n: Record<string, unknown>) => ({
+        items = arr.map((n: Record<string, unknown>) => ({
           id: Number(n.id),
           title: String(n.title),
           summary: String(n.summary),
@@ -528,11 +542,12 @@ export function createStore() {
           imageUrl: n.imageUrl ? String(n.imageUrl) : undefined,
           source: n.source ? String(n.source) : undefined,
           link: n.link ? String(n.link) : undefined,
-        }))
-        if (items.length > 0) {
-          return items as News[]
-        }
+        })) as News[]
       }
+      const map = new Map<number, News>()
+      for (const n of localMatches) map.set(n.id, n)
+      for (const n of items) map.set(n.id, n)
+      return Array.from(map.values()).slice().sort(byDateDesc)
       // 后端无匹配则本地回退（支持英文翻译标题）
       const byDateDesc = (a: News, b: News) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       const kw = k.toLowerCase()
@@ -545,15 +560,7 @@ export function createStore() {
         .slice()
         .sort(byDateDesc) as News[]
     }
-    const byDateDesc = (a: News, b: News) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    return news.value
-      .filter((n) => {
-        const t = String(n.title || '').toLowerCase()
-        const te = String(n.translations?.en?.title || '').toLowerCase()
-        return t.includes(k.toLowerCase()) || te.includes(k.toLowerCase())
-      })
-      .slice()
-      .sort(byDateDesc) as News[]
+    return localMatches.slice().sort(byDateDesc)
   }
 
   return {

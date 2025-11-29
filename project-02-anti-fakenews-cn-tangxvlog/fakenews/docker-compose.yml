@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     command: ["--default-authentication-plugin=mysql_native_password"]
     ports:
-      - "3311:3306"
+      - "3310:3306"
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: fakenews
@@ -13,7 +13,7 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
-      - "9001:80"
+      - "9000:80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
