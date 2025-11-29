@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <h2>{{ mode==='login' ? t('loginTitle') : t('registerTitle') }}</h2>
-    <form class="form" @submit.prevent="onSubmit">
+  <form class="form" @submit.prevent="onSubmit">
       <div class="form-row">
         <label>{{ t('email') }}</label>
         <input v-model="email" type="email" @input="validateEmail" />
@@ -11,6 +11,19 @@
         <label>{{ t('password') }}</label>
         <input v-model="password" type="password" @input="validatePassword" />
         <span v-if="passwordError" style="color:#ef4444">{{ passwordError }}</span>
+      </div>
+      <div v-if="mode==='register'" class="form-row">
+        <label>{{ t('username') }}</label>
+        <input v-model="username" type="text" />
+      </div>
+      <div v-if="mode==='register'" class="form-row">
+        <label>{{ t('avatar') }}</label>
+        <input type="text" v-model="avatarUrl" placeholder="https://..." />
+        <div style="display:flex; gap:8px; align-items:center; margin-top:6px">
+          <input type="file" @change="onFileChange" />
+          <button class="btn" type="button" @click="uploadAvatar" :disabled="!file">{{ t('avatar') }}</button>
+        </div>
+        <div v-if="avatarUrl" style="margin-top:6px"><img :src="avatarUrl" alt="avatar" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--border)" /></div>
       </div>
       <div style="display:flex; gap:8px">
         <button class="btn" type="submit">{{ mode==='login' ? t('login') : t('register') }}</button>
@@ -34,6 +47,9 @@ const { login, register } = useStore()
 const mode = ref<'login' | 'register'>('login')
 const email = ref('')
 const password = ref('')
+const username = ref('')
+const avatarUrl = ref('')
+const file = ref<File | null>(null)
 const emailError = ref('')
 const passwordError = ref('')
 
@@ -54,7 +70,7 @@ const onSubmit = async () => {
     if (mode.value === 'login') {
       await login(email.value.trim(), password.value)
     } else {
-      await register(email.value.trim(), password.value)
+      await register(email.value.trim(), password.value, username.value.trim() || undefined, avatarUrl.value.trim() || undefined)
     }
     router.push('/')
   } catch (e) {
@@ -63,6 +79,28 @@ const onSubmit = async () => {
 }
 
 const toggle = () => { mode.value = mode.value === 'login' ? 'register' : 'login' }
+
+const onFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  file.value = (input.files && input.files[0]) ? input.files[0] : null
+}
+const uploadAvatar = async () => {
+  if (!file.value) return
+  const fd = new FormData()
+  fd.append('file', file.value)
+  try {
+    const res = await fetch('/api/storage/uploadFile', { method: 'POST', body: fd })
+    if (res.ok) {
+      const url = await res.text()
+      avatarUrl.value = url.trim()
+      alert('头像已上传')
+    } else {
+      alert('上传失败')
+    }
+  } catch {
+    alert('网络错误，上传失败')
+  }
+}
 </script>
 
 <style scoped>

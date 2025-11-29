@@ -79,6 +79,8 @@ const dict = {
     reportImageUrl: "图片链接（可选）",
     reportSubmit: "提交报料",
     reportValidationAlert: "请填写标题、摘要、正文与记者姓名",
+    username: "用户名",
+    avatar: "头像",
   },
   en: {
     brand: "Social Anti-Fake News",
@@ -156,6 +158,8 @@ const dict = {
     reportImageUrl: "Image URL (optional)",
     reportSubmit: "Submit",
     reportValidationAlert: "Please fill title, summary, content and reporter",
+    username: "Username",
+    avatar: "Avatar",
   }
 } as const
 
