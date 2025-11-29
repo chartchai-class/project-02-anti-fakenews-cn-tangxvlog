@@ -1,13 +1,13 @@
 import type { News } from "./types";
 
-// 通过多重代理抓取RSS，提升在不同网络环境下的可用性
+// 通过多重代理抓取 RSS，提升在不同网络环境下的可用性
 export async function fetchRSS(url: string) {
   const proxies = [
     (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
     (u: string) => `https://allorigins.hexlet.app/raw?url=${encodeURIComponent(u)}`,
-    // r.jina.ai 可对任意URL做转发，支持https/http
+    // r.jina.ai 可转发任意 URL，支持 HTTP/HTTPS
     (u: string) => `https://r.jina.ai/http/${u}`,
-    // isomorphic-git 的简易CORS代理（只支持https）
+    // isomorphic-git 的轻量 CORS 代理（仅支持 HTTPS）
     (u: string) => u.startsWith("https://") ? `https://cors.isomorphic-git.org/${u}` : `https://cors.isomorphic-git.org/http://${u.replace(/^http:\/\//, "")}`,
   ];
 
@@ -25,12 +25,12 @@ export async function fetchRSS(url: string) {
       return text;
     } catch (e) {
       errors.push(e);
-      // 尝试下一个代理
+      // 继续尝试下一个代理
     }
   }
   const toMessage = (e: unknown) => {
     if (typeof e === 'object' && e && 'message' in e) {
-      // Narrow to an object with optional message
+      // 将错误对象转换为可读的消息
       const msg = (e as { message?: unknown }).message;
       return String(msg ?? '') || String(e);
     }
@@ -45,7 +45,7 @@ export function parseRSS(xmlText: string) {
     ?? dom.querySelector("feed > title")?.textContent
     ?? undefined;
 
-  // 支持 RSS 的 <item> 与 Atom 的 <entry>
+  // 同时支持 RSS `<item>` 与 Atom `<entry>`
   const nodes = ((): Element[] => {
     const rssItems = Array.from(dom.querySelectorAll("item"));
     if (rssItems.length > 0) return rssItems;
@@ -58,20 +58,20 @@ export function parseRSS(xmlText: string) {
   return nodes.map((node) => {
     const title = node.querySelector("title")?.textContent ?? "(无标题)";
 
-    // 描述/内容
+    // 摘要/正文
     const description = node.querySelector("description")?.textContent
       ?? node.querySelector("summary")?.textContent
       ?? node.querySelector("content")?.textContent
       ?? "";
 
-    // 发布时间（Atom优先 published/updated）
+    // 发布时间（Atom 优先使用 `published`/`updated`）
     const pubDateRaw = node.querySelector("pubDate")?.textContent
       ?? node.querySelector("published")?.textContent
       ?? node.querySelector("updated")?.textContent
       ?? new Date().toISOString();
     const createdAt = new Date(pubDateRaw).toISOString();
 
-    // 链接（Atom为 <link href="...">，RSS可能存在 <guid> 作为唯一标识）
+    // 链接（Atom 通常为 `<link href>`，RSS 可用 `<guid>` 作为唯一标识）
     let link: string | undefined = node.querySelector("link")?.textContent ?? undefined;
     if (!link) {
       const atomLink = node.querySelector('link[rel="alternate"]')?.getAttribute('href')
@@ -80,17 +80,17 @@ export function parseRSS(xmlText: string) {
     }
     if (!link) {
       const guid = node.querySelector('guid')?.textContent ?? undefined;
-      if (guid) link = guid; // 作为去重的唯一键回退
+      if (guid) link = guid; // 作为去重的回退唯一键
     }
 
-    // 作者（RSS author/dc:creator；Atom author > name）
+    // 作者（RSS: `author`/`dc:creator`；Atom: `author > name`）
     const author = node.querySelector("author")?.textContent
       ?? (node.querySelector("dc\\:creator") as Element | null)?.textContent
       ?? node.querySelector("author > name")?.textContent
       ?? channelTitle
       ?? "RSS";
 
-    // 图片（enclosure/media:content/从HTML解析img）
+    // 图片（`enclosure` / `media:content` / 从 HTML 解析 `<img>`）
     const enclosure = node.querySelector("enclosure")?.getAttribute("url") ?? undefined;
     const mediaContent = (node.querySelector("media\\:content") as Element | null)?.getAttribute("url") ?? undefined;
     let imageUrl = enclosure || mediaContent;
@@ -104,7 +104,7 @@ export function parseRSS(xmlText: string) {
   });
 }
 
-// 默认使用在中国大陆网络环境下通常可访问的RSS源（优先）+国际源（回退）
+// 默认源：优先中国大陆常见可访问 RSS，辅以国际源作为回退
 const DEFAULT_SOURCES = [
   "https://36kr.com/feed",               // 36氪（Atom）
   "https://www.ithome.com/rss/",         // IT之家（RSS）

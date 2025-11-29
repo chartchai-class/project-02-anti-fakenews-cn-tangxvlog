@@ -194,6 +194,17 @@ const onInput = async (e: Event) => {
   try {
     const res = await useStore().searchNews(v)
     searched.value = res
+      // 后端无匹配则本地回退（支持部分字母匹配）
+      if (res.length === 0) {
+        const kw = v.trim().toLowerCase()
+        searched.value = useStore().state.news.filter((n: any) => {
+          const t = String(n.title || '').toLowerCase()
+          const te = String(n.translations?.en?.title || '').toLowerCase()
+        return t.includes(kw) || te.includes(kw)
+      })
+    } else {
+      searched.value = res
+    }
   } finally { finishProgress() }
 }
 

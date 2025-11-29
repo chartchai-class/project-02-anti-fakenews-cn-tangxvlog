@@ -99,13 +99,13 @@ const submit = () => {
 .vote-btn { flex:1; display:flex; align-items:center; gap:10px; padding:14px 16px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer; transition: box-shadow .2s ease, transform .1s ease }
 .vote-btn .emoji { font-size:20px }
 
-/* Real News: green theme */
+/* 真实新闻：绿色主题 */
 .vote-btn.real { border-color: #22c55e; color: #14532d }
 .vote-btn.real .emoji { color: #16a34a }
 .vote-btn.real:hover { box-shadow: 0 8px 20px rgba(22,163,74,.12); transform: translateY(-1px) }
 .vote-btn.real.active { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,.20); background: #ecfdf5 }
 
-/* Fake News: red theme */
+/* 假新闻：红色主题 */
 .vote-btn.fake { border-color: #ef4444; color: #7f1d1d }
 .vote-btn.fake .emoji { color: #dc2626 }
 .vote-btn.fake:hover { box-shadow: 0 8px 20px rgba(220,38,38,.12); transform: translateY(-1px) }
