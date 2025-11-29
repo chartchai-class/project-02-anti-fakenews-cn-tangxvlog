@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Submit News • TruthSeeker</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar"><div class="brand"><div class="logo">T</div><span>TruthSeeker</span></div><nav class="nav"></nav></header>
+  <main class="container" style="max-width:720px">
+    <h2>Submit News</h2>
+    <form id="form">
+      <label>Title <input type="text" name="title" required /></label>
+      <label>Short detail <input type="text" name="shortDesc" required /></label>
+      <label>Full detail <textarea name="fullDesc" required style="width:100%;height:160px"></textarea></label>
+      <label>Image <input type="file" name="image" /></label>
+      <button class="btn" type="submit">Submit</button>
+    </form>
+  </main>
+  <script src="/common.js"></script>
+  <script>
+    async function getMe(){
+      const token=localStorage.getItem('token')||'';
+      const res=await fetch('/api/auth/me',{headers:{Authorization:`Bearer ${token}`}});
+      const data=await res.json();
+      return data.user;
+    }
+    getMe().then(u=>{if(!u){location.href='/login.html';} else if(!(u.role==='Member'||u.role==='Administrator')){alert('Members only');location.href='/';}});
+    const form=document.getElementById('form');
+    form.addEventListener('submit',async(e)=>{
+      e.preventDefault();
+      const token=localStorage.getItem('token')||'';
+      const fd=new FormData(form);
+      const res=await fetch('/api/news',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:fd});
+      if(res.ok){alert('Submitted');location.href='/';} else {alert('Submit failed');}
+    });
+  </script>
+</body>
+</html>
